@@ -161,7 +161,29 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Member> findLockByUsername(String username);
 
+    /**
+     * Projection
+     */
 //    List<UsernameOnly> findProjectionsByUsername(@Param("username") String username);
 //    List<UsernameOnlyDto> findProjectionsByUsername(@Param("username") String username);
     <T> List<T> findProjectionsByUsername(@Param("username") String username, Class<T> type);
+
+    /**
+     * 네이티브 쿼리 => 안쓰는 게 좋다
+     * 반환타입 지원이 몇가지 안됨(Object[], tuple, dto(스피링 데이터 인터페이스 Projection지원))
+     * 동적 쿼리 불가
+     * JPQL처럼 애플리케이션 로딩 시점에 문법 확인 불가
+     *
+     * -> 네이티브 SQL을 이용하여 DTO를 조회할 때는 Mybatis나 JDBC Template, jooq를 사용하는 것이 좋다.
+     */
+    @Query(value = "select * from member where username = ?", nativeQuery = true)
+    Member findByNativeQuery(String username);
+
+    // 네이티브 SQL을 이용하여 DTO를 조회하고 싶은데 동적쿼리는 아닐 때 사용하면 좋음
+    @Query(value = "select m.member_id as id, m.username, t.name as teamName " +
+            "       from Member m" +
+            "       left join team t"
+            , countQuery = "select count(*) from member"
+            , nativeQuery = true)
+    Page<MemberProjection> findByNativeProjection(Pageable pageable);
 }
