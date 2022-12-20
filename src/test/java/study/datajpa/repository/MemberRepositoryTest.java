@@ -7,6 +7,7 @@ import org.springframework.data.domain.*;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
+import study.datajpa.dto.UsernameOnlyDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
@@ -522,6 +523,69 @@ public class MemberRepositoryTest {
 
         List<Member> members = memberRepository.findLockByUsername("member2");
         Member findMember = members.get(0);
+    }
+
+    @Test
+    public void projections() {
+        Team teamA = Team.builder()
+                .name("teamA")
+                .build();
+        em.persist(teamA);
+
+        Member userA = Member.builder()
+                .username("userA")
+                .age(10)
+                .build();
+        Member userB = Member.builder()
+                .username("userB")
+                .age(10)
+                .build();
+        em.persist(userA);
+        em.persist(userB);
+
+        em.flush();
+        em.clear();
+
+        // when
+//        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("userA");
+//        List<UsernameOnlyDto> result = memberRepository.findProjectionsByUsername("userA");
+        List<UsernameOnlyDto> result = memberRepository.findProjectionsByUsername("userA", UsernameOnlyDto.class);
+
+        // then
+        for (UsernameOnlyDto usernameOnly : result) {
+            System.out.println("usernameOnly : " + usernameOnly.getUsername());
+        }
+    }
+
+    @Test
+    public void NestedProjections() {
+        Team teamA = Team.builder()
+                .name("teamA")
+                .build();
+        em.persist(teamA);
+
+        Member userA = Member.builder()
+                .username("userA")
+                .age(10)
+                .team(teamA)
+                .build();
+        Member userB = Member.builder()
+                .username("userB")
+                .age(10)
+                .build();
+        em.persist(userA);
+        em.persist(userB);
+
+        em.flush();
+        em.clear();
+
+        // when
+        List<NestedClosedProjections> result = memberRepository.findProjectionsByUsername("userA", NestedClosedProjections.class);
+
+        // then
+        for (NestedClosedProjections nestedClosedProjections : result) {
+            System.out.println("nestedClosedProjections : " + nestedClosedProjections.getUsername() + ", " + nestedClosedProjections.getTeam().getName());
+        }
     }
 
 }
